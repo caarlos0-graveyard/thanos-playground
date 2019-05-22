@@ -1,0 +1,36 @@
+global:
+  scrape_interval:     5s
+  evaluation_interval: 5s
+  external_labels:
+    region: test1
+    replica: B
+
+scrape_configs:
+  - job_name: fake
+    static_configs:
+    - targets:
+      - fake:8989
+  - job_name: domain
+    metrics_path: /probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: domain
+      - target_label: __address__
+        replacement: domain_exporter:9222
+    static_configs:
+      - targets:
+        - carlosbecker.com
+        - carinebecker.com
+        - caarlos0.dev
+        - carlosbecker.dev
+        - starchart.cc
+        - watchub.pw
+  - job_name: thanos
+    static_configs:
+    - targets:
+      - compactor:19191
+      - storer:19191
+      - sidecar1:19191
+      - sidecar2:19191

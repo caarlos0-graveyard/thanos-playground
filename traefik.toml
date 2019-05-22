@@ -1,0 +1,23 @@
+[global]
+  checkNewVersion = false
+  sendAnonymousUsage = false
+
+[accessLog]
+
+[log]
+  level = "INFO"
+
+[ping]
+
+[api]
+
+# [entryPoints]
+#   [entryPoints.querier]
+#   address = ":9090"
+
+[retry]
+
+[docker]
+endpoint = "unix:///var/run/docker.sock"
+watch = true
+exposedByDefault = false

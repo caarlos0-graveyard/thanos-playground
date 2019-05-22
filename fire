@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+cleanup() {
+  docker-compose stop || true
+  yes | docker-compose rm || true
+}
+
+trap 'cleanup' 'EXIT'
+cleanup
+docker-compose up

@@ -1,0 +1,130 @@
+version: '3.7'
+
+services:
+  #
+  # one prometheus and its sidecar
+  #
+  prometheus1:
+    image: prom/prometheus:v2.9.2
+    command:
+    - --web.enable-lifecycle
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --web.console.libraries=/usr/share/prometheus/console_libraries
+    - --web.console.templates=/usr/share/prometheus/consoles
+    - --storage.tsdb.min-block-duration=1m # small just to not wait hours to test :)
+    - --storage.tsdb.max-block-duration=1m # small just to not wait hours to test :)
+    volumes:
+    - ./prometheus1.yaml:/etc/prometheus/prometheus.yml
+    - ./data1:/prometheus
+  sidecar1:
+    image: improbable/thanos:v0.4.0
+    volumes:
+    - ./data1:/var/prometheus
+    - ./bucket_config.yaml:/bucket_config.yaml
+    command:
+    - sidecar
+    - --tsdb.path=/var/prometheus
+    - --prometheus.url=http://prometheus1:9090
+    - --objstore.config-file=/bucket_config.yaml
+    - --http-address=0.0.0.0:19191
+    - --grpc-address=0.0.0.0:19090
+
+  #
+  # another prometheus and its sidecar
+  #
+  prometheus2:
+    image: prom/prometheus:v2.9.2
+    command:
+    - --web.enable-lifecycle
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --web.console.libraries=/usr/share/prometheus/console_libraries
+    - --web.console.templates=/usr/share/prometheus/consoles
+    - --storage.tsdb.min-block-duration=1m # small just to not wait hours to test :)
+    - --storage.tsdb.max-block-duration=1m # small just to not wait hours to test :)
+    volumes:
+    - ./prometheus2.yaml:/etc/prometheus/prometheus.yml
+    - ./data2:/prometheus
+  sidecar2:
+    image: improbable/thanos:v0.4.0
+    volumes:
+    - ./data2:/var/prometheus
+    - ./bucket_config.yaml:/bucket_config.yaml
+    command:
+    - sidecar
+    - --tsdb.path=/var/prometheus
+    - --prometheus.url=http://prometheus2:9090
+    - --objstore.config-file=/bucket_config.yaml
+    - --http-address=0.0.0.0:19191
+    - --grpc-address=0.0.0.0:19090
+
+
+  storer:
+    image: improbable/thanos:v0.4.0
+    volumes:
+    - ./bucket_config.yaml:/bucket_config.yaml
+    command:
+    - store
+    - --data-dir=/var/thanos/store
+    - --objstore.config-file=bucket_config.yaml
+    - --http-address=0.0.0.0:19191
+    - --grpc-address=0.0.0.0:19090
+
+  compactor:
+    image: improbable/thanos:v0.4.0
+    volumes:
+    - ./bucket_config.yaml:/bucket_config.yaml
+    command:
+    - compact
+    - --data-dir=/var/thanos/compact
+    - --objstore.config-file=bucket_config.yaml
+    - --http-address=0.0.0.0:19191
+
+  # querier component which can be scaled
+  querier:
+    image: improbable/thanos:v0.4.0
+    labels:
+    - "traefik.enable=true"
+    - "traefik.port=19192"
+    - "traefik.frontend.rule=PathPrefix:/"
+    command:
+    - query
+    - --http-address=0.0.0.0:19192
+    - --store=sidecar1:19090
+    - --store=sidecar2:19090
+    - --store=storer:19090
+    - --query.replica-label=replica
+
+  #
+  # s3 compatible storage
+  #
+  minio:
+    image: minio/minio
+    ports:
+    - 9000:9000
+    environment:
+    - MINIO_ACCESS_KEY=minio
+    - MINIO_SECRET_KEY=miniostorage
+    volumes:
+    - ./minio_data:/data
+    command: server /data
+
+  # a simple exporter to test some metrics
+  domain_exporter:
+    image: caarlos0/domain_exporter:v1
+
+  # a load balancer to reverse-proxy to all queriers
+  traefik:
+    image: traefik
+    restart: always
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.toml:/traefik.toml
+
+networks:
+  default:
+    driver: bridge
