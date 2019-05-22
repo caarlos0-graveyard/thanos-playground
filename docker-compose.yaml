@@ -17,6 +17,8 @@ services:
     volumes:
     - ./prometheus1.yaml:/etc/prometheus/prometheus.yml
     - ./data1:/prometheus
+    depends_on:
+    - minio
   sidecar1:
     image: improbable/thanos:v0.4.0
     volumes:
@@ -29,6 +31,8 @@ services:
     - --objstore.config-file=/bucket_config.yaml
     - --http-address=0.0.0.0:19191
     - --grpc-address=0.0.0.0:19090
+    depends_on:
+    - minio
 
   #
   # another prometheus and its sidecar
@@ -46,6 +50,8 @@ services:
     volumes:
     - ./prometheus2.yaml:/etc/prometheus/prometheus.yml
     - ./data2:/prometheus
+    depends_on:
+    - minio
   sidecar2:
     image: improbable/thanos:v0.4.0
     volumes:
@@ -58,8 +64,10 @@ services:
     - --objstore.config-file=/bucket_config.yaml
     - --http-address=0.0.0.0:19191
     - --grpc-address=0.0.0.0:19090
+    depends_on:
+    - minio
 
-
+  # to search on old metrics
   storer:
     image: improbable/thanos:v0.4.0
     volumes:
@@ -70,7 +78,10 @@ services:
     - --objstore.config-file=bucket_config.yaml
     - --http-address=0.0.0.0:19191
     - --grpc-address=0.0.0.0:19090
+    depends_on:
+    - minio
 
+  # downsample metrics on the bucket
   compactor:
     image: improbable/thanos:v0.4.0
     volumes:
@@ -80,6 +91,8 @@ services:
     - --data-dir=/var/thanos/compact
     - --objstore.config-file=bucket_config.yaml
     - --http-address=0.0.0.0:19191
+    depends_on:
+    - minio
 
   # querier component which can be scaled
   querier:

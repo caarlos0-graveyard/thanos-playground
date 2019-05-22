@@ -11,10 +11,6 @@
 
 [api]
 
-# [entryPoints]
-#   [entryPoints.querier]
-#   address = ":9090"
-
 [retry]
 
 [docker]
