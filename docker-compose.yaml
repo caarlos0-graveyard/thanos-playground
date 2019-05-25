@@ -91,6 +91,7 @@ services:
     - --data-dir=/var/thanos/compact
     - --objstore.config-file=bucket_config.yaml
     - --http-address=0.0.0.0:19191
+    - --wait
     depends_on:
     - minio
 
