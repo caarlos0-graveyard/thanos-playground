@@ -20,7 +20,7 @@ services:
     depends_on:
     - minio
   sidecar1:
-    image: improbable/thanos:v0.4.0
+    image: improbable/thanos:v0.6.0
     volumes:
     - ./data1:/var/prometheus
     - ./bucket_config.yaml:/bucket_config.yaml
@@ -53,7 +53,7 @@ services:
     depends_on:
     - minio
   sidecar2:
-    image: improbable/thanos:v0.4.0
+    image: improbable/thanos:v0.6.0
     volumes:
     - ./data2:/var/prometheus
     - ./bucket_config.yaml:/bucket_config.yaml
@@ -69,7 +69,7 @@ services:
 
   # to search on old metrics
   storer:
-    image: improbable/thanos:v0.4.0
+    image: improbable/thanos:v0.6.0
     volumes:
     - ./bucket_config.yaml:/bucket_config.yaml
     command:
@@ -83,7 +83,7 @@ services:
 
   # downsample metrics on the bucket
   compactor:
-    image: improbable/thanos:v0.4.0
+    image: improbable/thanos:v0.6.0
     volumes:
     - ./bucket_config.yaml:/bucket_config.yaml
     command:
@@ -97,7 +97,7 @@ services:
 
   # querier component which can be scaled
   querier:
-    image: improbable/thanos:v0.4.0
+    image: improbable/thanos:v0.6.0
     labels:
     - "traefik.enable=true"
     - "traefik.port=19192"
